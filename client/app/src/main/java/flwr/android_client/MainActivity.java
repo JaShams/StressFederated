@@ -1,6 +1,7 @@
 package flwr.android_client;
 
 import android.app.Activity;
+import android.content.Context;
 import android.icu.text.SimpleDateFormat;
 import android.os.Bundle;
 
@@ -17,6 +18,7 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,6 +27,8 @@ import io.grpc.ManagedChannelBuilder;
 
 import  flwr.android_client.FlowerServiceGrpc.FlowerServiceStub;
 import com.google.protobuf.ByteString;
+
+import org.tensorflow.lite.examples.transfer.api.TransferLearningModel;
 
 import io.grpc.stub.StreamObserver;
 
@@ -54,21 +58,168 @@ public class MainActivity extends AppCompatActivity {
     public FlowerClient fc;
     private static final String TAG = "Flower";
 
+    EditText bt,bo,sh,hr;
+    Button predict;
+    TextView result;
+    private TransferLearningModelWrapper tlModel;
+    Context context;
+
+    public TransferLearningModel model;
+
+    int currentQuestion = 1;
+    int score = 0;
+    TextView questionTextView,scoreTextView;
+    RadioGroup radioGroup;
+    Button nextButton;
+
+    int final_s = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        context=this;
         resultText = (TextView) findViewById(R.id.grpc_response_text);
         resultText.setMovementMethod(new ScrollingMovementMethod());
         device_id = (EditText) findViewById(R.id.device_id_edit_text);
         ip = (EditText) findViewById(R.id.serverIP);
         port = (EditText) findViewById(R.id.serverPort);
-        loadDataButton = (Button) findViewById(R.id.load_data) ;
+        loadDataButton = (Button) findViewById(R.id.load_data);
         connectButton = (Button) findViewById(R.id.connect);
         trainButton = (Button) findViewById(R.id.trainFederated);
-
+        bt = findViewById(R.id.bt);
+        bo = findViewById(R.id.bo);
+        sh = findViewById(R.id.sh);
+        hr = findViewById(R.id.hr);
+        result = findViewById(R.id.result);
+        predict = (Button) findViewById(R.id.predict);
         fc = new FlowerClient(this);
+        tlModel = new TransferLearningModelWrapper(this);
+
+        MainActivity activity = new MainActivity();
+
+        questionTextView = findViewById(R.id.questionTextView);
+        radioGroup = findViewById(R.id.radioGroup);
+        nextButton = findViewById(R.id.nextButton);
+
+        questionTextView.setText(getString(R.string.question1));
+
+        nextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                int selectedId = radioGroup.getCheckedRadioButtonId();
+                int st=0;
+
+                if (selectedId == R.id.option2RadioButton) {
+                    score += 1;
+                    st=1;
+                } else if (selectedId == R.id.option3RadioButton) {
+                    score += 2;
+                    st=2;
+                } else if (selectedId == R.id.option4RadioButton) {
+                    score += 3;
+                    st=3;
+                }
+                else if (selectedId == R.id.option5RadioButton) {
+                    score += 4;
+                    st=4;
+                }
+                if(currentQuestion == 4 || currentQuestion ==5 || currentQuestion==7 || currentQuestion==8)
+                {
+                    score=score-st+(4-st);
+                }
+
+                currentQuestion++;
+
+                if (currentQuestion > 10) {
+                    final_s=score;
+                    final_s=final_s/8;
+                } else {
+                    updateQuestion();
+                }
+            }
+        });
+        predict.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+//                float[] arr = {95.36f,94.04f,6.36f,58.4f};
+                float[] arr = new float[4];
+                arr[0]=Float.parseFloat(bt.getText().toString());
+                arr[1]=Float.parseFloat(bo.getText().toString());
+                arr[2]=Float.parseFloat(sh.getText().toString());
+                arr[3]=Float.parseFloat(hr.getText().toString());
+
+
+                //Log.e("Predict",fc.predict(arr));
+
+                String pre = fc.predict(arr);
+                Log.e("predict",pre);
+                String news = pre.split(",")[0];
+                String new2 = news.substring(2);
+                //Log.e("predict2",news.substring(2));
+                result.setText(new2);
+                float u;
+                if(new2.equals("medium"))
+                {
+                    u=2;
+                }
+                else if(new2.equals(("high")))
+                {
+                    u=4;
+                }
+                else if(new2.equals(("medium high")))
+                {
+                    u=3;
+                }
+                else if(new2.equals(("medium low")))
+                {
+                    u=1;
+                }
+                else {
+                    u=0;
+                }
+
+                float g = (float) final_s;
+
+                float avg = Float.sum(u,g);
+                avg = (float)avg / (float)2;
+
+                Qlearning reco = new Qlearning(5,4);
+                Log.d("2D Array", Arrays.deepToString(reco.qTable));
+                int state= (int) avg;
+
+
+                int action = reco.getAction(state);
+
+
+                reco.takeAction(state,action,context);
+
+                bt.setText("");
+                bo.setText("");
+                sh.setText("");
+                hr.setText("");
+                result.setText("");
+
+//                Log.e("Predict);
+
+//                int maxIndex = 0;
+//                for (int i = 1; i < array.length; i++) {
+//                    if (array[i] > array[maxIndex]) {
+//                        maxIndex = i;
+//                    }
+//                }
+//                TransferLearningModel.Prediction[] arr = model.predict(image);
+//                String[][] ret = new String[arr.length][2];
+//                for(int i=0; i<arr.length; i++){
+//                    ret[i][0] = arr[i].getClassName();
+//                    ret[i][1] = String.valueOf(arr[i].getConfidence());
+//                }
+                //System.out.println(Arrays.deepToString(ret));
+            }
+        });
+
+
     }
+
 
     public static void hideKeyboard(Activity activity) {
         InputMethodManager imm = (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
@@ -292,5 +443,37 @@ public class MainActivity extends AppCompatActivity {
     private static ClientMessage evaluateResAsProto(float accuracy, int testing_size){
         ClientMessage.EvaluateRes res = ClientMessage.EvaluateRes.newBuilder().setLoss(accuracy).setNumExamples(testing_size).build();
         return ClientMessage.newBuilder().setEvaluateRes(res).build();
+    }
+
+    private void updateQuestion() {
+        if(currentQuestion==2)
+            questionTextView.setText(getString(R.string.question2));
+
+        if(currentQuestion==3)
+            questionTextView.setText(getString(R.string.question3));
+
+        if(currentQuestion==4)
+            questionTextView.setText(getString(R.string.question4));
+
+        if(currentQuestion==5)
+            questionTextView.setText(getString(R.string.question5));
+
+        if(currentQuestion==6)
+            questionTextView.setText(getString(R.string.question6));
+
+        if(currentQuestion==7)
+            questionTextView.setText(getString(R.string.question7));
+
+        if(currentQuestion==8)
+            questionTextView.setText(getString(R.string.question8));
+
+        if(currentQuestion==9)
+            questionTextView.setText(getString(R.string.question9));
+
+        if(currentQuestion==10)
+            questionTextView.setText(getString(R.string.question10));
+
+
+        radioGroup.clearCheck();
     }
 }

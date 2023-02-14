@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">Flower</string>
+    <string name="question1">In the last month, how often have you been upset because of something that happened unexpectedly?</string>
+    <string name="question2">In the last month, how often have you felt that you were unable to control the important things in your life?</string>
+    <string name="question3">In the last month, how often have you felt nervous and stressed?</string>
+    <string name="question4">In the last month, how often have you felt confident about your ability to handle your personal problems?</string>
+    <string name="question5">In the last month, how often have you felt that things were going your way?</string>
+    <string name="question6">In the last month, how often have you found that you could not cope with all the things that you had to do?</string>
+    <string name="question7">In the last month, how often have you been able to control irritations in your life?</string>
+    <string name="question8">In the last month, how often have you felt that you were on top of things?</string>
+    <string name="question9">In the last month, how often have you been angered because of things that happened that were outside of your control?</string>
+    <string name="question10">In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?</string>
 </resources>

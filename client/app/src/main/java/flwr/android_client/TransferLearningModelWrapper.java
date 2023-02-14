@@ -71,9 +71,16 @@ public class TransferLearningModelWrapper implements Closeable {
     }
 
     // This method is thread-safe, but blocking.
-    public Prediction[] predict(float[] image) {
-        return model.predict(image);
+    public String[][] predict(float[] image) {
+        Prediction[] arr = model.predict(image);
+        String[][] ret = new String[arr.length][2];
+        for(int i=0; i<arr.length; i++){
+            ret[i][0] = arr[i].getClassName();
+            ret[i][1] = String.valueOf(arr[i].getConfidence());
+        }
+        return ret;
     }
+
 
     public int getTrainBatchSize() {
         return model.getTrainBatchSize();
@@ -132,4 +139,6 @@ public class TransferLearningModelWrapper implements Closeable {
     public void close() {
         model.close();
     }
+
+
 }

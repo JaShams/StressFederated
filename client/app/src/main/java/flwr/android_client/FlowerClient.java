@@ -14,6 +14,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 public class FlowerClient {
@@ -36,7 +37,6 @@ public class FlowerClient {
     }
 
     public Pair<ByteBuffer[], Integer> fit(ByteBuffer[] weights, int epochs) {
-
         this.local_epochs = epochs;
         tlModel.updateParameters(weights);
         isTraining.close();
@@ -114,6 +114,10 @@ public class FlowerClient {
         } catch (InterruptedException e) {
             // no-op
         }
+    }
+
+    public String predict(float data[]){
+        return Arrays.deepToString(this.tlModel.predict(data));
     }
 
     public String get_class(String path) {

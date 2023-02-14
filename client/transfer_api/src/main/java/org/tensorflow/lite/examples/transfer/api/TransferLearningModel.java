@@ -48,6 +48,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public final class TransferLearningModel implements Closeable {
 
+
   /**
    * Prediction for a single class produced by the model.
    */
