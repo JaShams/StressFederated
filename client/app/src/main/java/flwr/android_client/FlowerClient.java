@@ -3,6 +3,7 @@ package flwr.android_client;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.ConditionVariable;
+import android.os.Environment;
 import android.util.Log;
 import android.util.Pair;
 
@@ -11,13 +12,17 @@ import com.opencsv.CSVReader;
 import androidx.lifecycle.MutableLiveData;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
-
+//import com.opencsv.CSVReader;
 public class FlowerClient {
+
+    String csv = (Environment.getExternalStorageDirectory().getAbsolutePath() + "/MyCsvFile.csv");
 
     private TransferLearningModelWrapper tlModel;
     private static final int LOWER_BYTE_MASK = 0xFF;
@@ -65,6 +70,9 @@ public class FlowerClient {
     public void loadData(int device_id) {
         try {
             CSVReader reader = new CSVReader(new InputStreamReader(this.context.getAssets().open("data/dataset"+ String.valueOf(device_id)+".csv")));
+            //CSVReader reader = new CSVReader(new FileReader(csv));
+
+            //CSVReader = new CSVReader(new FileWriter(csv));
             String line[];
             int i = 0;
             while ((line = reader.readNext()) != null) {
@@ -76,6 +84,7 @@ public class FlowerClient {
 
             i = 0;
             reader = new CSVReader(new InputStreamReader(this.context.getAssets().open("data/dataset"+ String.valueOf(device_id)+".csv")));
+//            reader = new CSVReader(new FileReader(csv));
             while ((line = reader.readNext()) != null) {
                 i++;
                 addSample(line, false);

@@ -7,6 +7,7 @@ import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
@@ -32,6 +33,9 @@ import org.tensorflow.lite.examples.transfer.api.TransferLearningModel;
 
 import io.grpc.stub.StreamObserver;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
@@ -40,10 +44,10 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import com.opencsv.CSVWriter;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -59,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "Flower";
 
     EditText bt,bo,sh,hr;
-    Button predict;
+    Button predict,write,read;
     TextView result;
     private TransferLearningModelWrapper tlModel;
     Context context;
@@ -72,7 +76,10 @@ public class MainActivity extends AppCompatActivity {
     RadioGroup radioGroup;
     Button nextButton;
 
+    String csv = (Environment.getExternalStorageDirectory().getAbsolutePath() + "/MyCsvFile.csv");
     int final_s = 0;
+    float avg;
+    int state;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -103,6 +110,72 @@ public class MainActivity extends AppCompatActivity {
 
         questionTextView.setText(getString(R.string.question1));
 
+        write = findViewById(R.id.write);
+        read = findViewById(R.id.read);
+
+        write.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                System.out.println(csv);
+                CSVWriter writer = null;
+                try {
+                    writer = new CSVWriter(new FileWriter(csv,true));
+
+                    String s=String.valueOf(state);
+                    List<String[]> data = new ArrayList<String[]>();
+                    data.add(new String[]{bt.getText().toString(), bo.getText().toString(),sh.getText().toString(),hr.getText().toString(),s});
+//                    data.add(new String[]{"India", "New Delhi"});
+//                    data.add(new String[]{"United States", "Washington D.C"});
+//                    data.add(new String[]{"Germany", "Berlin"});
+
+                    writer.writeAll(data); // data is adding to csv
+                    System.out.println(writer);
+                    writer.close();
+                   // callRead();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+//                File file = null;
+//                try {
+//                    file = new File("sampledata/sample.csv"));
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//                }
+//                try {
+//                    // create FileWriter object with file as parameter
+//                    FileWriter outputfile = new FileWriter(file);
+//
+//                    // create CSVWriter object filewriter object as parameter
+//                    CSVWriter writer = new CSVWriter (outputfile);
+//
+//                    // adding header to csv
+//                    String[] header = { "Name", "Class", "Marks" };
+//                    writer.writeNext(header);
+//
+//                    // add data to csv
+//                    String[] data1 = { "Aman", "10", "620" };
+//                    writer.writeNext(data1);
+//                    String[] data2 = { "Suraj", "10", "630" };
+//                    writer.writeNext(data2);
+//
+//                    System.out.println("written");
+//                    // closing writer connection
+//                    writer.close();
+//                }
+//                catch (IOException e) {
+//                    // TODO Auto-generated catch block
+//                    e.printStackTrace();
+//                }
+            }
+        });
+
+        read.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+            }
+        });
         nextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -180,12 +253,13 @@ public class MainActivity extends AppCompatActivity {
 
                 float g = (float) final_s;
 
-                float avg = Float.sum(u,g);
-                avg = (float)avg / (float)2;
-
+                avg = Float.sum(u,g);
+                if(g!=0) {
+                    avg = (float) avg / (float) 2;
+                }
                 Qlearning reco = new Qlearning(5,4);
                 Log.d("2D Array", Arrays.deepToString(reco.qTable));
-                int state= (int) avg;
+                state= (int) avg;
 
 
                 int action = reco.getAction(state);
@@ -193,11 +267,11 @@ public class MainActivity extends AppCompatActivity {
 
                 reco.takeAction(state,action,context);
 
-                bt.setText("");
-                bo.setText("");
-                sh.setText("");
-                hr.setText("");
-                result.setText("");
+//                bt.setText("");
+//                bo.setText("");
+//                sh.setText("");
+//                hr.setText("");
+//                result.setText("");
 
 //                Log.e("Predict);
 

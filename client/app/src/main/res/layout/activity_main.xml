@@ -14,6 +14,20 @@
         android:orientation="vertical"
         >
 
+        <Button
+            android:id="@+id/read"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="read"
+            android:textSize="18sp"
+            android:padding="16dp" />
+        <Button
+            android:id="@+id/write"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="write"
+            android:textSize="18sp"
+            android:padding="16dp" />
         <TextView
             android:layout_width="match_parent"
             android:layout_height="48dp"
@@ -34,7 +48,7 @@
         <EditText
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:hint="BT"
+            android:hint="Body Temperature"
             android:id="@+id/bt"
             android:layout_marginTop="10dp"
             android:imeOptions="actionDone"
@@ -45,7 +59,7 @@
         <EditText
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:hint="BO"
+            android:hint="Blood oxygen"
             android:id="@+id/bo"
             android:layout_marginTop="20dp"
             android:imeOptions="actionDone" />
@@ -53,7 +67,7 @@
         <EditText
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:hint="SH"
+            android:hint="Sleep Rate"
             android:id="@+id/sh"
             android:layout_marginTop="20dp"
             android:imeOptions="actionDone"
@@ -62,7 +76,7 @@
         <EditText
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:hint="HR"
+            android:hint="Heart Rate"
             android:id="@+id/hr"
             android:layout_marginTop="20dp"
             android:imeOptions="actionDone"
