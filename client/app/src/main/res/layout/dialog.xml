@@ -1,0 +1,32 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="20sp"
+        android:textAlignment="center"
+        android:id="@+id/result1"></TextView>
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:src="@drawable/breathe"
+        android:contentDescription="TODO" />
+
+    <EditText
+        android:id="@+id/reward"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:hint="On a scale of 1 to 10, how effective was
+        \nthe above method in reducing your stress level?"
+        android:inputType="text" />
+
+
+
+
+</LinearLayout>
