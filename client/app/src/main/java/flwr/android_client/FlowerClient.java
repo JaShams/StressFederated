@@ -1,9 +1,7 @@
 package flwr.android_client;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.os.ConditionVariable;
-import android.os.Environment;
 import android.util.Log;
 import android.util.Pair;
 
@@ -11,34 +9,66 @@ import com.opencsv.CSVReader;
 
 import androidx.lifecycle.MutableLiveData;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
-//import com.opencsv.CSVReader;
+
 public class FlowerClient {
 
-    String csv = (Environment.getExternalStorageDirectory().getAbsolutePath() + "/MyCsvFile.csv");
-
     private TransferLearningModelWrapper tlModel;
-    private static final int LOWER_BYTE_MASK = 0xFF;
     private MutableLiveData<Float> lastLoss = new MutableLiveData<>();
     private Context context;
     private final ConditionVariable isTraining = new ConditionVariable();
-    private static String TAG = "Flower";
+    private static final String TAG = "Flower";
     private int local_epochs = 1;
+    private List<Integer> weightSize;
+    private int flag = 0;
 
     public FlowerClient(Context context) {
         this.tlModel = new TransferLearningModelWrapper(context);
         this.context = context;
+        this.weightSize = Arrays.asList(16000, 4000, 2000000, 2000, 600000, 1200, 6000, 20);
     }
 
     public ByteBuffer[] getWeights() {
         return tlModel.getParameters();
+    }
+
+    public void restoreWeights() {
+        try (FileInputStream fileInputStream = context.openFileInput("weights.txt")) {
+            ByteBuffer[] weights = new ByteBuffer[8];
+            for (int i = 0; i < 8; i++) {
+                weights[i] = ByteBuffer.allocate(weightSize.get(i));
+            }
+            FileChannel fc = fileInputStream.getChannel();
+            fc.read(weights);
+            for (int i = 0; i < 8; i++) {
+                weights[i].rewind();
+            }
+            tlModel.updateParameters(weights);
+            fc.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void storeWeights() {
+        try (FileOutputStream fileOutputStream = context.openFileOutput("weights.txt", Context.MODE_PRIVATE)) {
+            FileChannel fc = fileOutputStream.getChannel();
+            ByteBuffer[] weights = tlModel.getParameters();
+            for (int i = 0; i < weights.length; i++) weights[i].flip();
+            long b = fc.write(weights);
+            Log.e(TAG, b + " Weights Stored");
+            fc.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public Pair<ByteBuffer[], Integer> fit(ByteBuffer[] weights, int epochs) {
@@ -47,7 +77,7 @@ public class FlowerClient {
         isTraining.close();
         tlModel.train(this.local_epochs);
         tlModel.enableTraining((epoch, loss) -> setLastLoss(epoch, loss));
-        Log.e(TAG ,  "Training enabled. Local Epochs = " + this.local_epochs);
+        Log.e(TAG, "Training enabled. Local Epochs = " + this.local_epochs);
         isTraining.block();
         return Pair.create(getWeights(), tlModel.getSize_Training());
     }
@@ -73,7 +103,7 @@ public class FlowerClient {
             //CSVReader reader = new CSVReader(new FileReader(csv));
 
             //CSVReader = new CSVReader(new FileWriter(csv));
-            String line[];
+            String[] line;
             int i = 0;
             while ((line = reader.readNext()) != null) {
                 i++;
@@ -93,7 +123,7 @@ public class FlowerClient {
             reader.close();
 
         } catch (IOException ex) {
-            Log.d(TAG, "loadData: IOexception occured");
+            Log.d(TAG, "loadData: IOException occurred");
             ex.printStackTrace();
         }
     }
@@ -102,17 +132,29 @@ public class FlowerClient {
         String sampleClass = null;
         // get rgb equivalent and class
         float[] fparams = new float[4];
-        for(int i=0; i<4 ; i++){
+        for (int i = 0; i < 4; i++) {
             fparams[i] = Float.parseFloat(params[i]);
         }
 
-        if(params[params.length - 1].equals("0")) sampleClass = "low";
-        else if(params[params.length - 1].equals("1")) sampleClass = "medium low";
-        else if(params[params.length - 1].equals("2")) sampleClass = "medium";
-        else if(params[params.length - 1].equals("3")) sampleClass = "medium high";
-        else if(params[params.length - 1].equals("4")) sampleClass = "high";
-        else {
-            Log.e(TAG, "Stress value not recognized");
+        switch (params[params.length - 1]) {
+            case "0":
+                sampleClass = "low";
+                break;
+            case "1":
+                sampleClass = "medium low";
+                break;
+            case "2":
+                sampleClass = "medium";
+                break;
+            case "3":
+                sampleClass = "medium high";
+                break;
+            case "4":
+                sampleClass = "high";
+                break;
+            default:
+                Log.e(TAG, "Stress value not recognized");
+                break;
         }
 
         // add to the list.
@@ -125,38 +167,9 @@ public class FlowerClient {
         }
     }
 
-    public String predict(float data[]){
+    public String predict(float[] data) {
         return Arrays.deepToString(this.tlModel.predict(data));
     }
 
-    public String get_class(String path) {
-        String label = path.split("/")[2];
-        return label;
-    }
 
-    /**
-     * Normalizes a camera image to [0; 1], cropping it
-     * to size expected by the model and adjusting for camera rotation.
-     */
-    private static float[] prepareImage(Bitmap bitmap)  {
-        int modelImageSize = TransferLearningModelWrapper.IMAGE_SIZE;
-
-        float[] normalizedRgb = new float[modelImageSize * modelImageSize * 3];
-        int nextIdx = 0;
-        for (int y = 0; y < modelImageSize; y++) {
-            for (int x = 0; x < modelImageSize; x++) {
-                int rgb = bitmap.getPixel(x, y);
-
-                float r = ((rgb >> 16) & LOWER_BYTE_MASK) * (1 / 255.0f);
-                float g = ((rgb >> 8) & LOWER_BYTE_MASK) * (1 / 255.0f);
-                float b = (rgb & LOWER_BYTE_MASK) * (1 / 255.0f);
-
-                normalizedRgb[nextIdx++] = r;
-                normalizedRgb[nextIdx++] = g;
-                normalizedRgb[nextIdx++] = b;
-            }
-        }
-
-        return normalizedRgb;
-    }
 }

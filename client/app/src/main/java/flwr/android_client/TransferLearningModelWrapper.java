@@ -9,6 +9,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.GatheringByteChannel;
@@ -28,12 +29,6 @@ import org.tensorflow.lite.examples.transfer.api.TransferLearningModel.Predictio
  */
 public class TransferLearningModelWrapper implements Closeable {
 
-    /**
-     * CIFAR10 image size. This cannot be changed as the TFLite model's input layer expects
-     * a 32x32x3 input.
-     */
-    public static final int IMAGE_SIZE = 32;
-
     private final TransferLearningModel model;
 
     private final ConditionVariable shouldTrain = new ConditionVariable();
@@ -43,7 +38,7 @@ public class TransferLearningModelWrapper implements Closeable {
         model =
                 new TransferLearningModel(
                         new AssetModelLoader(context, "model"),
-                        Arrays.asList("high","medium high","medium","medium low","low"));
+                        Arrays.asList("low", "medium low", "medium", "medium high", "high"));
         this.context = context;
     }
 

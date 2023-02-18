@@ -3,13 +3,21 @@ import android.app.AlertDialog;
 import android.app.Application;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.text.InputType;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.opencsv.CSVReader;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.Random;
 
 public class Qlearning  {
@@ -23,23 +31,37 @@ public class Qlearning  {
     String []action_name={"Breathing for 1 min","Meditation for 1 min","Build a gratitude list","Praise yourself"};
 
     // Initialize the Q-table with random values
-    final double[][] qTable;
+    final float[][] qTable;
 
     // Define the learning rate and discount factor
     private double alpha = 0.1;
     private double gamma = 0.9;
+    SharedPreferences sharedPref;
 
-    public Qlearning(int states,int actions) {
+    public Qlearning(int states, int actions, Context context) {
         this.states = states;
         this.actions = actions;
 
-        qTable = new double[states][actions];
-        Random rand = new Random();
-        for (int i = 0; i < states; i++) {
-            for (int j = 0; j < actions; j++) {
-                qTable[i][j] = rand.nextDouble();
+        sharedPref = context.getSharedPreferences("qlearning", 0);
+        int flag = sharedPref.getInt("Init", 0);
+        qTable = new float[states][actions];
+        if (flag == 0) {
+            Random rand = new Random();
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putInt("Init", 1);
+            for (int i = 0; i < states; i++) {
+                for (int j = 0; j < actions; j++) {
+                    qTable[i][j] = rand.nextFloat();
+                    editor.putFloat("val" + String.valueOf(i) + String.valueOf(j), qTable[i][j]);
+                }
             }
+            editor.commit();
+        } else if (flag == 1) {
+            for (int i = 0; i < states; i++)
+                for (int j = 0; j < actions; j++)
+                    qTable[i][j] = sharedPref.getFloat("val" + String.valueOf(i) + String.valueOf(j), -1.0f);
         }
+        Log.e("QLearing", Arrays.deepToString(qTable));
     }
 
     public int getAction(int state) {
@@ -118,12 +140,17 @@ public class Qlearning  {
     }
     //Update occurs after an action is taken
     public void updateState(int previousState, int action, double reward, int nextState) {
-        double[] nextActionValues = qTable[nextState];
+        float[] nextActionValues = qTable[nextState];
         double max = nextActionValues[0];
         for (int i = 1; i < actions; i++) {
             if (max < nextActionValues[i]) max = nextActionValues[i];
         }
         qTable[previousState][action] += alpha * (reward + (gamma * max));
 
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putFloat("val" + String.valueOf(previousState) + String.valueOf(action), qTable[previousState][action]);
+        editor.commit();
+
+        Log.e("QLearning", Arrays.deepToString(qTable));
     }
 }
