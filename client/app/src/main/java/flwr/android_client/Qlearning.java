@@ -28,8 +28,12 @@ public class Qlearning  {
     //Counter measures to recommend
     private int actions;
 
-    String []action_name={"Breathing for 1 min","Meditation for 1 min","Build a gratitude list","Praise yourself"};
-
+    String []action_name={"Breathing Exercise","Mindfulness","Gratitude","Stretching","Affirmation","Sensory Grounding","Guided Imagery","Laughter","Time in Nature","Muscle Relaxation"};
+    String []action_detail={"Take a deep breath in through your nose for 4 seconds, hold for 4 seconds, and release slowly through your mouth for 4 seconds. Repeat this for 5-10 rounds.",
+            "Take a moment to notice your surroundings and focus on your breath for 1-2 minutes. If your mind wanders, gently bring your attention back to your breath.",
+            "Build a gratitude list","Take a break and do some simple stretches, like reaching your arms up over your head or stretching your neck from side to side.","Praise yourself","Take a moment to focus on your senses. Name one thing you can see, hear, feel, smell, and taste.","Imagine a peaceful scene, such as a beach or a forest, and picture yourself there. Focus on the details of the scene and take deep breaths as you do so.","Take a break to watch a funny video, read a joke, or call a friend who makes you laugh.",
+    "Take a short walk outside and focus on the sounds, smells, and sights around you."," Tense up a muscle group (e.g., your shoulders) for 5-10 seconds, then release the tension and feel the difference. Move on to another muscle group and repeat the process."
+            };
     // Initialize the Q-table with random values
     final float[][] qTable;
 
@@ -104,39 +108,77 @@ public class Qlearning  {
 
     private int showEffectivenessPrompt(int state,int action,Context context) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-
-//        ImageView imageView = new ImageView(context);
-//        imageView.setImageResource(R.drawable.breathe);
-
         LayoutInflater inflater = LayoutInflater.from(context);
         View dialogView = inflater.inflate(R.layout.dialog, null);
 
         result=dialogView.findViewById(R.id.result1);
-        result.setText("Stress Level - "+state);
+        String stressLevel;
+        switch (state) {
+            case 0:
+                stressLevel = "high";
+                break;
+            case 1:
+                stressLevel = "medium high";
+                break;
+            case 2:
+                stressLevel = "medium";
+                break;
+            case 3:
+                stressLevel = "medium low";
+                break;
+            default:
+                stressLevel= "low";
+                break;
+        }
+        result.setText("Stress Level - "+stressLevel);
 
-        builder.setTitle(action_name[action]);
+//        if(stressLevel.equals("low"))
+//        {
+//            builder.setTitle("Your stress level is ok");
+//            builder.setMessage("Good going, just continue to work on your health");
+//            builder.create().show();
+//            return 10;
+//        }
+ //       else {
+            builder.setTitle(action_name[action]);
 
+            builder.setMessage(action_detail[action]);
 
-        EditText input = dialogView.findViewById(R.id.reward);
-        input.setInputType(InputType.TYPE_CLASS_NUMBER);
-//        builder.setMessage("");
-        builder.setView(dialogView);
+            ImageView image = dialogView.findViewById(R.id.imageView);
+            switch (action) {
+                case 0:
+                    image.setImageResource(R.drawable.breathe);
+                case 1:
+                    image.setImageResource(R.drawable.meditation);
+                case 2:
+                    image.setImageResource(R.drawable.gratitude);
+                default:
+                    image.setImageResource(R.drawable.breathe);
+            }
+
+            EditText input = dialogView.findViewById(R.id.reward);
+            input.setInputType(InputType.TYPE_CLASS_NUMBER);
+
+            builder.setView(dialogView);
+
 //        final EditText input = new EditText(context);
 //        input.setInputType(InputType.TYPE_CLASS_NUMBER);
 //        builder.setView(input);
-        final int[] reward = new int[1];
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                // retrieve the value entered by the user
-                int effectiveness = Integer.parseInt(input.getText().toString());
-                // use the value to adjust the reward
-                reward[0] =effectiveness;
-            }
-        });
+            final int[] reward = new int[1];
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    // retrieve the value entered by the user
+                    int effectiveness = Integer.parseInt(input.getText().toString());
+                    // use the value to adjust the reward
+                    reward[0] = effectiveness;
+                }
+            });
+
 //        builder.setView(imageView);
 
-        builder.create().show();
-        return reward[0];
+            builder.create().show();
+            return reward[0];
+ //       }
     }
     //Update occurs after an action is taken
     public void updateState(int previousState, int action, double reward, int nextState) {

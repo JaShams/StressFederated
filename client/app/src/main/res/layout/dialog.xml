@@ -16,14 +16,14 @@
         android:layout_width="160dp"
         android:layout_height="160dp"
         android:src="@drawable/breathe"
-        android:contentDescription="TODO" />
+        android:contentDescription="TODO"
+        android:layout_gravity="center" />
 
     <EditText
         android:id="@+id/reward"
         android:layout_width="match_parent"
         android:layout_height="64dp"
-        android:hint="On a scale of 1 to 10, how effective was
-        \nthe above method in reducing your stress level?"
+        android:hint="On a scale of 1 to 10,\nhow effective was the above method\nin reducing your stress level?"
         android:inputType="text" />
 
 

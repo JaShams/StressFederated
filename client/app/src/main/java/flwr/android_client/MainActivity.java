@@ -64,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private Button loadDataButton;
     private Button connectButton;
     private Button trainButton;
+    private Button reset;
     private TextView resultText;
     private EditText device_id;
     private ManagedChannel channel;
@@ -89,14 +90,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         context=this;
-        resultText = (TextView) findViewById(R.id.grpc_response_text);
-        resultText.setMovementMethod(new ScrollingMovementMethod());
+        //resultText = (TextView) findViewById(R.id.grpc_response_text);
+        //resultText.setMovementMethod(new ScrollingMovementMethod());
         device_id = (EditText) findViewById(R.id.device_id_edit_text);
         ip = (EditText) findViewById(R.id.serverIP);
         port = (EditText) findViewById(R.id.serverPort);
         loadDataButton = (Button) findViewById(R.id.load_data);
         connectButton = (Button) findViewById(R.id.connect);
         trainButton = (Button) findViewById(R.id.trainFederated);
+        reset = (Button) findViewById(R.id.reset);
         bt = findViewById(R.id.bt);
         bo = findViewById(R.id.bo);
         sh = findViewById(R.id.sh);
@@ -121,6 +123,15 @@ public class MainActivity extends AppCompatActivity {
         if (file.exists()) restore = 1;
         else restore = 0;
 
+        reset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+                overridePendingTransition(0, 0);
+                startActivity(getIntent());
+                overridePendingTransition(0, 0);
+            }
+        });
         write.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -162,30 +173,31 @@ public class MainActivity extends AppCompatActivity {
         nextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                int selectedId = radioGroup.getCheckedRadioButtonId();
-                int st=0;
 
-                if (selectedId == R.id.option2RadioButton) {
-                    score += 1;
-                    st=1;
-                } else if (selectedId == R.id.option3RadioButton) {
-                    score += 2;
-                    st=2;
-                } else if (selectedId == R.id.option4RadioButton) {
-                    score += 3;
-                    st=3;
-                }
-                else if (selectedId == R.id.option5RadioButton) {
-                    score += 4;
-                    st=4;
-                }
-                if(currentQuestion == 4 || currentQuestion ==5 || currentQuestion==7 || currentQuestion==8)
-                {
-                    score=score-st+(4-st);
-                }
+                if(currentQuestion<=10) {
+                    int selectedId = radioGroup.getCheckedRadioButtonId();
+                    int st = 0;
 
-                currentQuestion++;
 
+                    if (selectedId == R.id.option2RadioButton) {
+                        score += 1;
+                        st = 1;
+                    } else if (selectedId == R.id.option3RadioButton) {
+                        score += 2;
+                        st = 2;
+                    } else if (selectedId == R.id.option4RadioButton) {
+                        score += 3;
+                        st = 3;
+                    } else if (selectedId == R.id.option5RadioButton) {
+                        score += 4;
+                        st = 4;
+                    }
+                    if (currentQuestion == 4 || currentQuestion == 5 || currentQuestion == 7 || currentQuestion == 8) {
+                        score = score - st + (4 - st);
+                    }
+
+                    currentQuestion++;
+                }
                 if (currentQuestion > 10) {
                     final_s=score;
                     final_s=final_s/8;
@@ -212,35 +224,37 @@ public class MainActivity extends AppCompatActivity {
                 String news = pre.split(",")[0];
                 String new2 = news.substring(2);
                 //Log.e("predict2",news.substring(2));
-                result.setText(new2);
+//                result.setText(new2);
                 float u;
-                if(new2.equals("medium"))
-                {
-                    u=2;
-                }
-                else if(new2.equals(("high")))
-                {
-                    u=4;
-                }
-                else if(new2.equals(("medium high")))
-                {
-                    u=3;
-                }
-                else if(new2.equals(("medium low")))
-                {
-                    u=1;
-                }
-                else {
-                    u=0;
+                switch (new2) {
+                    case "medium":
+                        u = 2;
+                        break;
+                    case ("low"):
+                        u = 4;
+                        break;
+                    case ("medium low"):
+                        u = 3;
+                        break;
+                    case ("medium high"):
+                        u = 1;
+                        break;
+                    default:
+                        u = 0;
+                        break;
                 }
 
                 float g = (float) final_s;
-
-                avg = Float.sum(u,g);
+                //float weight1= (float) 0.8;
+                //float weight2= (float) 0.2;
+                //avg = u;
+                avg=Float.sum(u,g);
                 if(g!=0) {
-                    avg = (float) avg / (float) 2;
+                    //avg = Float.sum(weight1*(u),weight2*(5-g));
+                    avg = avg / 2;
                 }
-                Qlearning reco = new Qlearning(5, 4, context);
+
+                Qlearning reco = new Qlearning(5, 10, context);
                 Log.d("2D Array", Arrays.deepToString(reco.qTable));
                 state= (int) avg;
 
@@ -291,7 +305,7 @@ public class MainActivity extends AppCompatActivity {
     public void setResultText(String text) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss", Locale.GERMANY);
         String time = dateFormat.format(new Date());
-        resultText.append("\n" + time + "   " + text);
+
     }
 
     public void loadData(View view){
@@ -304,7 +318,7 @@ public class MainActivity extends AppCompatActivity {
         }
         else{
             hideKeyboard(this);
-            setResultText("Loading the local training dataset in memory. It will take several seconds.");
+
             loadDataButton.setEnabled(false);
 
             ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -325,7 +339,7 @@ public class MainActivity extends AppCompatActivity {
                         result =  "Training dataset is loaded in memory.";
                     }
                     handler.post(() -> {
-                        setResultText(result);
+
                         connectButton.setEnabled(true);
                     });
                 }
@@ -334,10 +348,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void connect(View view) {
-//        String host = ip.getText().toString();
-//        String portStr = port.getText().toString();
-        String host = "10.0.2.2";
-        String portStr = "8888";
+      String host = ip.getText().toString();
+      String portStr = port.getText().toString();
+       // String host = "10.0.2.2";
+        //String portStr = "8888";
         if (TextUtils.isEmpty(host) || TextUtils.isEmpty(portStr) || !Patterns.IP_ADDRESS.matcher(host).matches()) {
             Toast.makeText(this, "Please enter the correct IP and port of the FL server", Toast.LENGTH_LONG).show();
         }
@@ -347,7 +361,7 @@ public class MainActivity extends AppCompatActivity {
             hideKeyboard(this);
             trainButton.setEnabled(true);
             connectButton.setEnabled(false);
-            setResultText("Channel object created. Ready to train!");
+
         }
     }
 
@@ -371,7 +385,7 @@ public class MainActivity extends AppCompatActivity {
                     result = "Failed to connect to the FL server \n" + sw;
                 }
                 handler.post(() -> {
-                    setResultText(result);
+
                     trainButton.setEnabled(false);
                 });
             }
@@ -423,7 +437,7 @@ public class MainActivity extends AppCompatActivity {
 
                 if (message.hasGetParametersIns()) {
                     Log.e(TAG, "Handling GetParameters");
-                    activity.setResultText("Handling GetParameters message from the server.");
+
 
                     if (restore == 1) activity.fc.restoreWeights();
 
@@ -432,7 +446,7 @@ public class MainActivity extends AppCompatActivity {
                     c = weightsAsProto(weights);
                 } else if (message.hasFitIns()) {
                     Log.e(TAG, "Handling FitIns");
-                    activity.setResultText("Handling Fit request from the server.");
+
 
                     List<ByteString> layers = message.getFitIns().getParameters().getTensorsList();
                     Log.e("layers", layers.toString());
@@ -454,7 +468,7 @@ public class MainActivity extends AppCompatActivity {
                     activity.fc.storeWeights();
                 } else if (message.hasEvaluateIns()) {
                     Log.e(TAG, "Handling EvaluateIns");
-                    activity.setResultText("Handling Evaluate request from the server");
+
 
                     List<ByteString> layers = message.getEvaluateIns().getParameters().getTensorsList();
 
@@ -467,12 +481,12 @@ public class MainActivity extends AppCompatActivity {
 
                     float loss = inference.first.first;
                     float accuracy = inference.first.second;
-                    activity.setResultText("Test Accuracy after this round = " + accuracy);
+
                     int test_size = inference.second;
                     c = evaluateResAsProto(loss, test_size);
                 }
                 requestObserver.onNext(c);
-                activity.setResultText("Response sent to the server");
+
             }
             catch (Exception e){
                 Log.e(TAG,"Error occurred!");
